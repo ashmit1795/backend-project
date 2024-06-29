@@ -3,13 +3,17 @@
   "version": "1.0.0",
   "description": "A production grade backend project",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon src/index.js"
   },
   "keywords": [
     "backend",
     "javascript"
   ],
   "author": "Ashmit",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
 }
