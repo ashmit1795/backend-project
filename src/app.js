@@ -28,3 +28,9 @@ app.use(express.static('public'));
 
 // Parse cookies from the incoming requests and populate req.cookies with an object keyed by the cookie names
 app.use(cookieParser());
+
+// Import routes
+import userRouter from "./routes/user.routes.js";
+
+// Use routes
+app.use("/api/v1/users", userRouter);
