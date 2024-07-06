@@ -200,8 +200,165 @@ const refreshAccessToken = asyncHandler(async (req, res, next) => {
     
 });
 
+// Function to change the current password
+const changeCurrentPassword = asyncHandler(async (req, res, next) => {
+    // Steps to change the current password
+    // 1. Get the user data from the request body (currentPassword, newPassword)
+    // 2. Validate the user data and ensure that the required fields are not empty
+    // 3. Get the user object from the request body
+    // 4. Check if the current password provided matches the password in the database
+    // 5. If the password does not match, return an error response with a status code of 401 (Unauthorized)
+    // 6. If the password matches, update the user object with the new password
+    // 7. Save the user object in the database
+    // 8. Return the response to the client with a status code of 200 (OK) and remove the password field from the user object
+
+    // 1
+    const { currentPassword, newPassword } = req.body;
+
+    // 2
+    if (!currentPassword || !newPassword) {
+        throw new ApiError(400, "Fields cannot be empty");
+    }
+
+    
+    // 3
+    const user = await User.findById(req.user._id);
+    
+    // 4
+    const isCurrentPasswordCorrect = await user.isPasswordCorrect(currentPassword);
+    
+    // 5
+    if (!isCurrentPasswordCorrect) {
+        throw new ApiError(401, "Invalid current password");
+    }
+
+    if (currentPassword === newPassword) {
+        throw new ApiError(400, "New password cannot be the same as the current password");
+    }
+    
+    // 6
+    user.password = newPassword;
+
+    // 7
+    await user.save({ validateBeforeSave: false });
+
+    // 8
+    res.status(200).json(new ApiResponse({}, "Password changed successfully", 200));
+});
+
+// Function to get the current user details
+const getCurrentUser = asyncHandler(async (req, res, next) => {
+    // Steps to get the current user details
+    // Get the user object from the request and return the response to the client with a status code of 200 (OK)
+    const user = req.user;
+    res.status(200).json(new ApiResponse(user, "User details retrieved successfully", 200));
+});
+
+// Function to update user details
+const updateUserDetails = asyncHandler(async (req, res, next) => {
+    // Steps to update user details
+    // 1. Get the user data from the request body (email, fullName)
+    // 2. Validate the user data and ensure that at least one field is provided for update
+    // 3. Get the user object from the database using the request body
+    // 4. Update the user object with the new data
+    // 5. Return the response to the client with a status code of 200 (OK) and remove the password field and refresh token from the user object
+
+    // 1
+    const { email, fullName } = req.body;
+
+    // 2
+    if (!email && !fullName) {
+        throw new ApiError(400, "Please provide at least one field to update");
+    }
+
+    // 3
+    const newEmail = email ? email : req.user.email;
+    const newFullName = fullName ? fullName : req.user.fullName;
+
+    // Check if the email is valid
+    if (!newEmail.includes("@") || !newEmail.includes(".")) {
+        throw new ApiError(400, "Please provide a valid email address");
+    }
+
+    // 4
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        { 
+            $set: { 
+                email: newEmail, 
+                fullName: newFullName 
+            } 
+        },
+        { new: true }
+    ).select("-password -refreshToken");     
+    
+    // 5
+    return res.status(200).json(new ApiResponse(user, "User details updated successfully", 200));
+
+});
+
+// Function to update user avatar
+const updateUserAvatar = asyncHandler(async (req, res, next) => {
+    const avatarLocalPath = req.file.path;
+    if (!avatarLocalPath) {
+        throw new ApiError(400, "Please provide an avatar image");
+    }
+
+    const avatarURL = await uploadToCloudinary(avatarLocalPath);
+    if (!avatarURL) {
+        throw new ApiError(500, "An error occurred while uploading the image");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        { 
+            $set: { 
+                avatar: avatarURL 
+            } 
+        },
+        { new: true }
+    ).select("-password -refreshToken");
+
+    return res.status(200).json(new ApiResponse(user, "User avatar updated successfully", 200));
+});
+
+// Function to update user cover image
+const updateUserCoverImage = asyncHandler(async (req, res, next) => {
+    const coverImageLocalPath = req.file.path;
+    if (!coverImageLocalPath) {
+        throw new ApiError(400, "Please provide a cover image");
+    }
+
+    const coverImageURL = await uploadToCloudinary(coverImageLocalPath);
+    if (!coverImageURL) {
+        throw new ApiError(500, "An error occurred while uploading the image");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        { 
+            $set: { 
+                coverImage: coverImageURL 
+            } 
+        },
+        { new: true }
+    ).select("-password -refreshToken");
+
+    res.status(200).json(new ApiResponse(user, "User cover image updated successfully", 200));
+});
+
 // Export the functions to be used in the routes
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+export { 
+    registerUser, 
+    loginUser, 
+    logoutUser, 
+    refreshAccessToken, 
+    changeCurrentPassword, 
+    getCurrentUser, 
+    updateUserDetails,
+    updateUserAvatar,
+    updateUserCoverImage
+};
 
 // Helper function to generate access and refresh tokens
 async function generateAccessAndRefreshTokens(userId){

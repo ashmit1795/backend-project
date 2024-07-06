@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginUser, logoutUser, refreshAccessToken, registerUser } from "../controllers/user.controllers.js";
+import { changeCurrentPassword, getCurrentUser, loginUser, logoutUser, refreshAccessToken, registerUser, updateUserAvatar, updateUserCoverImage, updateUserDetails } from "../controllers/user.controllers.js";
 import upload from "../middlewares/multer.middlewares.js";
 import { verifyAccessToken } from "../middlewares/auth.middlewares.js";
 
@@ -18,5 +18,10 @@ router.route("/login").post(loginUser);
 // Secured routes
 router.route("/logout").post(verifyAccessToken, logoutUser);
 router.route("/refresh-token").post(refreshAccessToken);
+router.route("/change-password").patch(verifyAccessToken, changeCurrentPassword, logoutUser);
+router.route("/my-profile").get(verifyAccessToken, getCurrentUser);
+router.route("/update-profile").patch(verifyAccessToken, updateUserDetails);
+router.route("/update-avatar").patch(verifyAccessToken, upload.single("avatar"), updateUserAvatar);
+router.route("/update-cover-image").patch(verifyAccessToken, upload.single("coverImage"), updateUserCoverImage);
 
 export default router;
