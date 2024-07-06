@@ -5,6 +5,7 @@ import { User } from "../models/user.models.js";
 import uploadToCloudinary from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 
+// Function to register a new user
 const registerUser = asyncHandler(async (req, res, next) => {
     // Steps to register a user
     // 1. Get the user data from the request body (username, email, fullName, password, avatar, coverImage)✅
@@ -76,6 +77,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
     res.status(201).json(new ApiResponse(createdUser, "User Registered Successfully", 201 ));
 });
 
+// Function to login a user
 const loginUser = asyncHandler(async (req, res, next) => {
     // Steps to login a user
     // 1. Get the user data from the request body (username or email, password)
@@ -148,6 +150,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
 
 });
 
+// Function to logout a user
 const logoutUser = asyncHandler(async (req, res, next) => {
     const user = req.user;
     user.refreshToken = null;
@@ -165,6 +168,7 @@ const logoutUser = asyncHandler(async (req, res, next) => {
     );
 });
 
+// Function to refresh the access token
 const refreshAccessToken = asyncHandler(async (req, res, next) => {
     const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
     if (!incomingRefreshToken) {
@@ -196,8 +200,10 @@ const refreshAccessToken = asyncHandler(async (req, res, next) => {
     
 });
 
+// Export the functions to be used in the routes
 export { registerUser, loginUser, logoutUser, refreshAccessToken };
 
+// Helper function to generate access and refresh tokens
 async function generateAccessAndRefreshTokens(userId){
     // Steps to generate access and refresh tokens
     // 1. Generate a new access token using the user object
