@@ -2,7 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { User } from "../models/user.models.js";
-import uploadToCloudinary from "../utils/cloudinary.js";
+import { uploadToCloudinary, deleteFileFromCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 
 // Function to register a new user
@@ -304,6 +304,12 @@ const updateUserAvatar = asyncHandler(async (req, res, next) => {
         throw new ApiError(400, "Please provide an avatar image");
     }
 
+    let currentAvatar = await User.findById(req.user._id).select("avatar");
+    
+    if (currentAvatar) {
+        await deleteFileFromCloudinary(currentAvatar);
+    }
+    
     const avatarURL = await uploadToCloudinary(avatarLocalPath);
     if (!avatarURL) {
         throw new ApiError(500, "An error occurred while uploading the image");
@@ -327,6 +333,12 @@ const updateUserCoverImage = asyncHandler(async (req, res, next) => {
     const coverImageLocalPath = req.file.path;
     if (!coverImageLocalPath) {
         throw new ApiError(400, "Please provide a cover image");
+    }
+
+    let currentCoverImage = await User.findById(req.user._id).select("coverImage");
+    
+    if (currentCoverImage) {
+        await deleteFileFromCloudinary(currentCoverImage);
     }
 
     const coverImageURL = await uploadToCloudinary(coverImageLocalPath);

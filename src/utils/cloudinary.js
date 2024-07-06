@@ -7,7 +7,8 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const uploadToCloudinary = async (localFilePath) => {
+// Function to upload a file to Cloudinary
+export const uploadToCloudinary = async (localFilePath) => {
     try {
         // Check if the file exists
         if (!localFilePath) return;
@@ -27,4 +28,28 @@ const uploadToCloudinary = async (localFilePath) => {
     }
 };
 
-export default uploadToCloudinary;
+// Function to delete a file from Cloudinary
+export const deleteFileFromCloudinary = async (url) => {
+    try {
+        const publicId = getPublicIdFromUrl(url);
+        // Delete the file from Cloudinary
+        const result = await cloudinary.uploader.destroy(publicId);
+        console.log('File deleted successfully:', result);
+    } catch (error) {
+        console.error('Error deleting file from Cloudinary:', error);
+    }
+};
+
+// Function to get the public id of a file from its cloudinary url
+function getPublicIdFromUrl(url) {
+    if (typeof url !== 'string') {
+        url = String(url); // Convert the url to a string
+    }
+    const parts = url.split('/'); // Split the url by '/'
+    const publicIdWithExtension = parts.slice(-1)[0]; // Get the last part of the url
+    const publicId = publicIdWithExtension.split('.')[0]; // Remove the file extension
+    return publicId;
+}
+
+  
+  
