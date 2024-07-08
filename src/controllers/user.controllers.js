@@ -232,6 +232,7 @@ const changeCurrentPassword = asyncHandler(async (req, res, next) => {
         throw new ApiError(401, "Invalid current password");
     }
 
+    // Check if the new password is the same as the current password
     if (currentPassword === newPassword) {
         throw new ApiError(400, "New password cannot be the same as the current password");
     }
@@ -304,11 +305,8 @@ const updateUserAvatar = asyncHandler(async (req, res, next) => {
         throw new ApiError(400, "Please provide an avatar image");
     }
 
+    // Get the current avatar
     let currentAvatar = await User.findById(req.user._id).select("avatar");
-    
-    if (currentAvatar) {
-        await deleteFileFromCloudinary(currentAvatar);
-    }
     
     const avatarURL = await uploadToCloudinary(avatarLocalPath);
     if (!avatarURL) {
@@ -325,6 +323,11 @@ const updateUserAvatar = asyncHandler(async (req, res, next) => {
         { new: true }
     ).select("-password -refreshToken");
 
+    // Delete the current avatar from cloudinary after updating the new avatar successfully
+    if (currentAvatar) {
+        await deleteFileFromCloudinary(currentAvatar);
+    }
+
     return res.status(200).json(new ApiResponse(user, "User avatar updated successfully", 200));
 });
 
@@ -335,11 +338,8 @@ const updateUserCoverImage = asyncHandler(async (req, res, next) => {
         throw new ApiError(400, "Please provide a cover image");
     }
 
+    // Get the current cover image
     let currentCoverImage = await User.findById(req.user._id).select("coverImage");
-    
-    if (currentCoverImage) {
-        await deleteFileFromCloudinary(currentCoverImage);
-    }
 
     const coverImageURL = await uploadToCloudinary(coverImageLocalPath);
     if (!coverImageURL) {
@@ -355,6 +355,11 @@ const updateUserCoverImage = asyncHandler(async (req, res, next) => {
         },
         { new: true }
     ).select("-password -refreshToken");
+
+    // Delete the current cover image from cloudinary after updating the new cover image successfully
+    if (currentCoverImage) {
+        await deleteFileFromCloudinary(currentCoverImage);
+    }
 
     res.status(200).json(new ApiResponse(user, "User cover image updated successfully", 200));
 });
