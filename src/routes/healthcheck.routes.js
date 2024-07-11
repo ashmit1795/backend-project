@@ -1,10 +1,9 @@
 import { Router } from "express";
-import { } from "../controllers/healthcheck.controllers.js";
-import { verifyAccessToken } from "../middlewares/auth.middlewares.js";
+import { healthCheck } from "../controllers/healthcheck.controllers.js";
 
 const router = Router();
 
 // Define routes
-router.route("/").get(healthCheck)
+router.route("/").get(healthCheck);
 
 export default router;

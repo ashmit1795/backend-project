@@ -49,4 +49,4 @@ app.use("/api/v1/videos", videoRouter);
 app.use("/api/v1/tweets", tweetRouter);
 app.use("/api/v1/likes", likeRouter);
 app.use("/api/v1/playlists", playlistRouter);
-app.use("/api/v1/healthcheck", healthCheckRouter);
+app.use("/api/v1/health-check", healthCheckRouter);
