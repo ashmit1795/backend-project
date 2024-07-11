@@ -434,10 +434,9 @@ const getUserChannelDetails = asyncHandler(async (req, res, next) => {
     }
 
     return res.status(200).json(new ApiResponse(channel[0], "Channel details retrieved successfully", 200));
-
-   
 });
 
+// Function to get the user's watch history
 const getWatchHistory = asyncHandler(async (req, res, next) => {
     // Steps to get the user's watch history
     // 1. Get the user object from the request body 
