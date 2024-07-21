@@ -9,7 +9,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 const createTweet = asyncHandler(async (req, res, next) => {
     const { content } = req.body;
     if (!content.trim()) {
-        return next(new ApiError(400, "Content is required"));
+        throw new ApiError(400, "Content is required");
     }
 
     const tweet = await Tweet.create({
@@ -18,7 +18,7 @@ const createTweet = asyncHandler(async (req, res, next) => {
     });
 
     if (!tweet) {
-        return next(new ApiError(500, "Tweet could not be created"));
+        throw new ApiError(500, "Tweet could not be created");
     }
 
     return res.status(201).json(new ApiResponse(tweet, "Tweet created successfully", 201 ));
@@ -28,18 +28,18 @@ const createTweet = asyncHandler(async (req, res, next) => {
 const getUserTweets = asyncHandler(async (req, res, next) => {
     const username = req.params.username;
     if (!username) {
-        return next(new ApiError(400, "Username is required"));
+        throw new ApiError(400, "Username is required");
     }
 
     const user = await User.findOne({ username : username });
     if (!user) {
-        return next(new ApiError(404, "User not found"));
+        throw new ApiError(404, "User not found");
     }
 
     const tweets = await Tweet.find({ owner: user._id });
 
     if (!tweets || tweets.length === 0) {
-        return next(new ApiError(404, "No tweets found"));
+        throw new ApiError(404, "No tweets found");
     }
 
     return res.status(200).json(new ApiResponse(tweets, "Tweets retrieved successfully", 200));
@@ -50,19 +50,19 @@ const getUserTweets = asyncHandler(async (req, res, next) => {
 const updateTweet = asyncHandler(async (req, res, next) => {
     const tweetId = req.params.tweetId;
     if (!tweetId) {
-        return next(new ApiError(400, "Tweet ID is required"));
+        throw new ApiError(400, "Tweet ID is required");
     }
     const { newContent } = req.body;
     if (!newContent.trim()) {
-        return next(new ApiError(400, "Content is required"));
+        throw new ApiError(400, "Content is required");
     }
     const tweet = await Tweet.findById(tweetId);
     if (!tweet) {
-        return next(new ApiError(404, "Tweet not found"));
+        throw new ApiError(404, "Tweet not found");
     }
 
     if (tweet.owner.toString() !== req.user._id.toString()) {
-        return next(new ApiError(403, "You are not authorized to perform this action"));
+        throw new ApiError(403, "You are not authorized to perform this action");
     }
 
     const updatedTweet = await Tweet.findByIdAndUpdate(
@@ -77,7 +77,7 @@ const updateTweet = asyncHandler(async (req, res, next) => {
     );
 
     if (!updatedTweet) {
-        return next(new ApiError(500, "Tweet could not be updated"));
+        throw new ApiError(500, "Tweet could not be updated");
     }
 
     return res.status(200).json(new ApiResponse(updatedTweet, "Tweet updated successfully", 200));
@@ -88,22 +88,22 @@ const updateTweet = asyncHandler(async (req, res, next) => {
 const deleteTweet = asyncHandler(async (req, res, next) => {
     const tweetId = req.params.tweetId;
     if (!tweetId) {
-        return next(new ApiError(400, "Tweet ID is required"));
+        throw new ApiError(400, "Tweet ID is required");
     }
 
     const tweet = await Tweet.findById(tweetId);
     if (!tweet) {
-        return next(new ApiError(404, "Tweet not found"));
+        throw new ApiError(404, "Tweet not found");
     }
 
     if (tweet.owner.toString() !== req.user._id.toString()) {
-        return next(new ApiError(403, "You are not authorized to perform this action"));
+        throw new ApiError(403, "You are not authorized to perform this action");
     }
 
     const result = await Tweet.findByIdAndDelete(tweetId);
     console.log(result);
     if (!result) {
-        return next(new ApiError(500, "Tweet could not be deleted"));
+        throw new ApiError(500, "Tweet could not be deleted");
     }
 
     return res.status(200).json(new ApiResponse({ deletedTweet : result}, "Tweet deleted successfully", 200));
