@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {  } from "../controllers/comment.controllers.js";
+import { getVideoComments, addComment, updateComment, deleteComment } from "../controllers/comment.controllers.js";
 import { verifyAccessToken } from "../middlewares/auth.middlewares.js";
 
 const router = Router();
@@ -9,5 +9,7 @@ const router = Router();
 router.use(verifyAccessToken);
 
 // Define routes
+router.route("/:videoId").get(getVideoComments).post(addComment);
+router.route("/c/:commentId").delete(deleteComment).patch(updateComment);
 
 export default router;
