@@ -100,11 +100,11 @@ const deleteTweet = asyncHandler(async (req, res, next) => {
         throw new ApiError(403, "You are not authorized to perform this action");
     }
 
-    const result = await Tweet.findByIdAndDelete(tweetId);
-    console.log(result);
-    if (!result) {
+    try {
+        await Tweet.findByIdAndDelete(tweetId)
+    } catch (error) {
         throw new ApiError(500, "Tweet could not be deleted");
-    }
+    };
 
     return res.status(200).json(new ApiResponse({ deletedTweet : result}, "Tweet deleted successfully", 200));
 });
