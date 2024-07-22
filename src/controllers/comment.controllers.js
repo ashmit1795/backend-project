@@ -17,7 +17,11 @@ const getVideoComments = asyncHandler(async (req, res, next) => {
     // If video does not exist
     const video = await Video.findById(videoId);
     if (!video) {
-        throw new ApiError(404, "Video not found");
+        throw new ApiError(404, "Video not found or is not published");
+    }
+    // If video is not published
+    if (!video.isPublished) {
+        throw new ApiError(403, "Video is not published");
     }
 
     const aggregateQuery = await Comment.aggregate([
