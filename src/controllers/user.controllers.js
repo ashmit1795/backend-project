@@ -51,10 +51,10 @@ const registerUser = asyncHandler(async (req, res, next) => {
     }
 
     // 7
-    let avatarURL = await uploadToCloudinary(avatarLocalPath);
-    let coverImageURL = coverImageLocalPath ? await uploadToCloudinary(coverImageLocalPath) : null;
+    let avatarUploadResponse = await uploadToCloudinary(avatarLocalPath);
+    let coverImageUploadResponse = coverImageLocalPath ? await uploadToCloudinary(coverImageLocalPath) : null;
     // Check if the image upload is successful
-    if (!avatarURL || (coverImageLocalPath && !coverImageURL)) {
+    if (!avatarUploadResponse.url || (coverImageLocalPath && !coverImageUploadResponse.url)) {
         throw new ApiError(500, "An error occurred while uploading the image");
     }
 
@@ -64,8 +64,8 @@ const registerUser = asyncHandler(async (req, res, next) => {
         email,
         fullName,
         password,
-        avatar: avatarURL,
-        coverImage: coverImageURL
+        avatar: avatarUploadResponse.url,
+        coverImage: coverImageUploadResponse.url
     });
 
     // 9
@@ -309,8 +309,8 @@ const updateUserAvatar = asyncHandler(async (req, res, next) => {
     // Get the current avatar
     let currentAvatar = await User.findById(req.user._id).select("avatar");
     
-    const avatarURL = await uploadToCloudinary(avatarLocalPath);
-    if (!avatarURL) {
+    const avatarUploadResponse = await uploadToCloudinary(avatarLocalPath);
+    if (!avatarUploadResponse.url) {
         throw new ApiError(500, "An error occurred while uploading the image");
     }
 
@@ -318,7 +318,7 @@ const updateUserAvatar = asyncHandler(async (req, res, next) => {
         req.user._id,
         { 
             $set: { 
-                avatar: avatarURL 
+                avatar: avatarUploadResponse.url 
             } 
         },
         { new: true }
@@ -342,8 +342,8 @@ const updateUserCoverImage = asyncHandler(async (req, res, next) => {
     // Get the current cover image
     let currentCoverImage = await User.findById(req.user._id).select("coverImage");
 
-    const coverImageURL = await uploadToCloudinary(coverImageLocalPath);
-    if (!coverImageURL) {
+    const coverImageUploadResponse = await uploadToCloudinary(coverImageLocalPath);
+    if (!coverImageUploadResponse.url) {
         throw new ApiError(500, "An error occurred while uploading the image");
     }
 
@@ -351,7 +351,7 @@ const updateUserCoverImage = asyncHandler(async (req, res, next) => {
         req.user._id,
         { 
             $set: { 
-                coverImage: coverImageURL 
+                coverImage: coverImageUploadResponse.url 
             } 
         },
         { new: true }
