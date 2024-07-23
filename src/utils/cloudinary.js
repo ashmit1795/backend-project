@@ -20,7 +20,7 @@ export const uploadToCloudinary = async (localFilePath) => {
         // Delete the file from the local storage
         fs.unlinkSync(localFilePath || "");
         // Return the url of the uploaded file
-        return response.url;
+        return response;
     } catch (error) {
         // An error occurred while uploading the file to Cloudinary
         fs.unlinkSync(localFilePath || "");
