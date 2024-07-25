@@ -7,8 +7,8 @@ import mongoose from 'mongoose';
 
 // Get all comments for a video
 const getVideoComments = asyncHandler(async (req, res, next) => {
-    const {videoId}  = req.params;
-    const {page = 1, limit = 10} = req.query;
+    const { videoId }  = req.params;
+    const { page = 1, limit = 10 } = req.query;
 
     if (!videoId) {
         throw new ApiError(400, "Video ID is required");
@@ -37,13 +37,13 @@ const getVideoComments = asyncHandler(async (req, res, next) => {
                 foreignField: "_id",
                 as: "owner",
                 pipeline: [
-                   {
+                    {
                         $project: {
                             username: 1,
                             fullName: 1,
                             avatar: 1
                         }
-                   }
+                    }
                 ]
             },
         },
@@ -62,17 +62,20 @@ const getVideoComments = asyncHandler(async (req, res, next) => {
                 owner: 1,
                 createdAt: 1
             }
+        },
+        {
+            $skip: parseInt((page - 1)*limit, 10)
+        },
+        {
+            $limit: parseInt(limit, 10)
         }
     ]);
 
-    const options = {
-        page: parseInt(page, 10),
-        limit: parseInt(limit, 10),
-    };
+    if (!aggregateQuery || aggregateQuery.length === 0 ) {
+        throw new ApiError(404, "No comments found");
+    }
 
-    const comments = await Comment.aggregatePaginate(aggregateQuery, options);
-
-    return res.status(200).json(new ApiResponse(comments, "Comments retrieved successfully", 200));
+    return res.status(200).json(new ApiResponse(aggregateQuery, "Comments retrieved successfully", 200));
 });
 
 // Add a comment to a video
