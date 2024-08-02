@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {  } from "../controllers/video.controllers.js";
+import { publishVideo } from "../controllers/video.controllers.js";
 import { verifyAccessToken } from "../middlewares/auth.middlewares.js";
 import upload from "../middlewares/multer.middlewares.js";
 
@@ -10,5 +10,11 @@ const router = Router();
 router.use(verifyAccessToken);
 
 // Define routes
+router.route("/").post(
+    upload.fields([
+        { name: "thumbnail", maxCount: 1 },
+        { name: "videoFile", maxCount: 1 }
+    ]), publishVideo
+)
 
 export default router;
