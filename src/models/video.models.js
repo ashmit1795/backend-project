@@ -34,8 +34,12 @@ const videoSchema = new Schema({
         type: Boolean,
         default: true
     },
+    tags: [{
+        type: String
+    }]
 }, {timestamps: true});
 
+videoSchema.index({ title: "text", description: "text" });
 videoSchema.plugin(mongooseAggregatePaginate);
 
 export const Video = mongoose.model("Video", videoSchema);
