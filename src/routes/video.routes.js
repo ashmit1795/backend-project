@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { publishVideo } from "../controllers/video.controllers.js";
+import { getAllVideos, publishVideo, viewVideo } from "../controllers/video.controllers.js";
 import { verifyAccessToken } from "../middlewares/auth.middlewares.js";
 import upload from "../middlewares/multer.middlewares.js";
 
@@ -15,6 +15,8 @@ router.route("/").post(
         { name: "thumbnail", maxCount: 1 },
         { name: "videoFile", maxCount: 1 }
     ]), publishVideo
-)
+).get(getAllVideos);
+
+router.route("/view/:videoId").patch(viewVideo);
 
 export default router;
