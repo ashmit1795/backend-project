@@ -1,10 +1,11 @@
 import ApiError from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { Video } from "../models/video.models.js"
-import { uploadToCloudinary } from "../utils/cloudinary.js";
+import { deleteFileFromCloudinary, uploadToCloudinary } from "../utils/cloudinary.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import mongoose, { mongo } from "mongoose";
 import { User } from "../models/user.models.js";
+import { Comment } from "../models/comment.models.js";
 
 // Publish a video
 const publishVideo = asyncHandler(async(req, res, next) =>{
@@ -72,25 +73,12 @@ const publishVideo = asyncHandler(async(req, res, next) =>{
 
 // Get all videos based on the query parameters
 const getAllVideos = asyncHandler(async(req, res, next) =>{
-    const { page = 1, limit = 10, query="", tag="", sortBy = "createdAt", sortType = 'desc', userId } = req.query;
+    const { page = 1, limit = 10, query="", tag="", sortBy = "createdAt", sortType = "desc", userId } = req.query;
     let sortOrder = sortType === "asc" ? 1 : -1;
-    const result = await Video.aggregate([
+    const basePipeline = [
         {
             $match: {
-                $text: {
-                    $search: String(query)
-                },
-                tags:{
-                    $regex: tag,
-                    $options: "i"
-                }
-            }
-        },
-        {
-            $addFields: {
-                score: {
-                    $meta: "textScore"
-                }
+                isPublished: true
             }
         },
         {
@@ -128,9 +116,29 @@ const getAllVideos = asyncHandler(async(req, res, next) =>{
         {
             $limit: parseInt(limit, 10)
         }
-    ]);
-
-    console.log(result[0]);
+    ];
+    if(!(query === "" && tag === "")){
+        basePipeline.unshift(
+            {
+                $match: {
+                    $text: {
+                        $search: String(query)
+                    },
+                    tags:{
+                        $regex: tag,
+                        $options: "i"
+                    }
+                }
+            }
+        );
+    }
+    const result = await Video.aggregate(basePipeline);
+    if(!result || result.length === 0){
+        throw new ApiError(404, "No videos found based on the query parameters");
+    }
+    res.status(200).json(
+        new ApiResponse(result[0], "Videos fetched successfully", 200)
+    );
 });
 
 // View a video
@@ -172,13 +180,155 @@ const viewVideo = asyncHandler(async(req, res, next) =>{
     );
 });
 
-export { publishVideo, getAllVideos, viewVideo }
+// Update a video
+const updateVideo = asyncHandler(async(req, res, next) =>{
+    const { videoId } = req.params;
+    const { title, description, tags } = req.body;
+
+    if(!videoId){
+        throw new ApiError(400, "Video ID is required");
+    }
+
+    const video = await Video.findById(videoId);
+
+    if(!video){
+        throw new ApiError(404, "Video not found");
+    }
+
+    if(video.owner.toString() !== req.user._id.toString()){
+        throw new ApiError(403, "You are not allowed to update this video");
+    }
+
+    if(!title.trim() && !description.trim() && !tags){
+        throw new ApiError(400, "At least one field is required to update the video");
+    }
+
+
+    let newTitle = title.trim() ? title : video.title;
+    let newDescription = description.trim() ? description : video.description;
+    let newTags = tags ? tags.split(",").map(tag => tag.trim()) : video.tags;
+
+    let thumbnailLocalPath = req.file ? req.file.path : undefined;
+    let currentThumbnail = video.thumbnail;
+    let thumbnailUploadResponse;
+
+    if(thumbnailLocalPath){
+        thumbnailUploadResponse = await uploadToCloudinary(thumbnailLocalPath);
+        if(!thumbnailUploadResponse.url){
+            throw new ApiError(500, "An error occurred while uploading the thumbnail");
+        }
+        if(thumbnailUploadResponse){
+            await deleteFileFromCloudinary(currentThumbnail);
+        }
+    }
+
+    let newThumbnail = thumbnailUploadResponse ? thumbnailUploadResponse.url : currentThumbnail;
+
+    const updatedVideo = await Video.findByIdAndUpdate(videoId, {
+        title: newTitle,
+        description: newDescription,
+        tags: newTags,
+        thumbnail: newThumbnail
+    }, { new: true });
+
+    if(!updatedVideo){
+        throw new ApiError(500, "An error occurred while updating the video");
+    }
+
+    res.status(200).json(
+        new ApiResponse(updatedVideo, "Video updated successfully", 200)
+    );
+
+});
+
+// Delete a video
+const deleteVideo = asyncHandler(async(req, res, next) =>{
+    const { videoId } = req.params;
+
+    if(!videoId){
+        throw new ApiError(400, "Video ID is required");
+    }
+
+    const video = await Video.findById(videoId);
+
+    if(!video){
+        throw new ApiError(404, "Video not found");
+    }
+
+    if(video.owner.toString() !== req.user._id.toString()){
+        throw new ApiError(403, "You are not allowed to update this video");
+    }
+
+    const deletedVideo = await Video.findByIdAndDelete(videoId);
+
+    if(!deletedVideo){
+        throw new ApiError(500, "An error occurred while deleting the video");
+    }
+
+    await deleteFileFromCloudinary(deletedVideo.videoFile);
+    await deleteFileFromCloudinary(deletedVideo.thumbnail);
+    let deletedWatchHistory = await User.updateMany(
+        {
+            watchHistory: videoId
+        }, 
+        {
+            $pull: {
+                watchHistory: videoId
+            }
+        },
+        { new: true }
+    );
+
+    let deletedComments =  await Comment.deleteMany({
+        video: videoId
+    }, { new: true });
+
+    console.log(deletedWatchHistory, deletedComments);
+
+    res.status(200).json(
+        new ApiResponse({}, "Video deleted successfully", 200)
+    );
+    
+});
+
+// Toggle the publish status of a video
+const togglePublishStatus = asyncHandler(async(req, res, next) =>{
+    const { videoId } = req.params;
+
+    if(!videoId){
+        throw new ApiError(400, "Video ID is required");
+    }
+
+    const video = await Video.findById(videoId);
+
+    if(!video){
+        throw new ApiError(404, "Video not found");
+    }
+
+    if(video.owner.toString() !== req.user._id.toString()){
+        throw new ApiError(403, "You are not allowed to update this video");
+    }
+
+    const updatedVideo = await Video.findByIdAndUpdate(videoId, {
+        isPublished: !video.isPublished
+    }, { new: true });
+
+    if(!updatedVideo){
+        throw new ApiError(500, "An error occurred while updating the video");
+    }
+
+    res.status(200).json(
+        new ApiResponse(updatedVideo, "Video publish status updated successfully", 200)
+    );
+
+});
+
+export { publishVideo, getAllVideos, viewVideo, updateVideo, deleteVideo, togglePublishStatus }
 
 // Calculate views for a particular video
 const calculateUniqueVideoViews = async (videoId) =>{
     try {
         const videoObjectId = new mongoose.Types.ObjectId(videoId);
-        console.log(videoObjectId);
         const uniqueViewsCount = await User.aggregate([
             {
                 $unwind: "$watchHistory"
