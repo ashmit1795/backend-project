@@ -17,7 +17,7 @@ const getVideoComments = asyncHandler(async (req, res, next) => {
     // If video does not exist
     const video = await Video.findById(videoId);
     if (!video) {
-        throw new ApiError(404, "Video not found or is not published");
+        throw new ApiError(404, "Video not found");
     }
     // If video is not published
     if (!video.isPublished) {
@@ -86,6 +86,15 @@ const addComment = asyncHandler(async (req, res, next) => {
 
     if (!videoId) {
         throw new ApiError(400, "Video ID is required");
+    }
+
+    const video = await Video.findById(videoId);
+    if (!video) {
+        throw new ApiError(404, "Video not found or is not published");
+    }
+
+    if (!video.isPublished) {
+        throw new ApiError(403, "Video is not published");
     }
     
     if (!content.trim()) {
