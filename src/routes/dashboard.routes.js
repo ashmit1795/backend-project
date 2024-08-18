@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {  } from "../controllers/dashboard.controllers.js";
+import { getChannelStats, getChannelVideos } from "../controllers/dashboard.controllers.js";
 import { verifyAccessToken } from "../middlewares/auth.middlewares.js";
 
 const router = Router();
@@ -9,5 +9,6 @@ const router = Router();
 router.use(verifyAccessToken);
 
 // Define routes
-
+router.route("/stats").get(getChannelStats);
+router.route("/videos").get(getChannelVideos);
 export default router;
