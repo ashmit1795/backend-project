@@ -68,7 +68,7 @@ The server will run on http://localhost:3000/
 
 The API endpoints for this project can be tested using the provided Postman collection. You can download the Postman collection from the following link:
 
-[Download Postman Collection](https://api.postman.com/collections/32382436-91d25735-25e7-4298-838b-c5cd53ed1147?access_key=PMAT-01J5V4ABBB5WWZ2GZJDZDZ0Y1N)
+[Download Postman Collection](https://drive.google.com/file/d/1kbO882jl-DCtAmliYzPs7dHImDSRSniT/view?usp=sharing)
 
 The collection includes all necessary requests for user authentication, video management, and other features.
 ## Learning Source
