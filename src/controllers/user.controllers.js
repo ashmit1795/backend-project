@@ -5,6 +5,7 @@ import { User } from "../models/user.models.js";
 import { uploadToCloudinary, deleteFileFromCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import sendEmail from "../utils/emailService.js";
 
 // Function to register a new user
 const registerUser = asyncHandler(async (req, res, next) => {
@@ -65,7 +66,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
         fullName,
         password,
         avatar: avatarUploadResponse.url,
-        coverImage: coverImageUploadResponse.url
+        coverImage: coverImageUploadResponse ? coverImageUploadResponse.url : null,
     });
 
     // 9
@@ -74,8 +75,10 @@ const registerUser = asyncHandler(async (req, res, next) => {
         throw new ApiError(500, "An error occurred while creating the user");
     }
 
+    await sendEmail(email, "Welcome to YouTube Clone", `Hello ${fullName},\n\nWelcome to YouTube Clone! You have successfully registered on our platform. Enjoy watching and sharing videos with your friends.\n\nBest regards,\nYouTube Clone Team`);
+
     // 10
-    res.status(201).json(new ApiResponse(createdUser, "User Registered Successfully", 201 ));
+    return res.status(201).json(new ApiResponse(createdUser, "User Registered Successfully", 201 ));
 });
 
 // Function to login a user
